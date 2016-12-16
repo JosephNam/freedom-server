@@ -29,7 +29,7 @@ func ReadOne(collection *mgo.Collection, query bson.M, target interface{}) bool 
 // ReadAll reads all items matching the query and writes them all to the target struct.
 // Returns a bool based on whether or not function executed correctly.
 func ReadAll(collection *mgo.Collection, query bson.M, target []struct{}) bool {
-	err := collection.Find(query).All(&target)
+	err := collection.Find(query).All(target)
 	return check(err)
 }
 

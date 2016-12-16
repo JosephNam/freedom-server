@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"net/http"
 
@@ -37,7 +36,6 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 	readSuccess := dao.ReadOne(c, request, &doc)
 	w.Header().Set("Content-Type", "application/json")
 	if readSuccess {
-		fmt.Println("doc", doc)
 		if doc.Username == request["username"] && doc.Password == request["password"] {
 			response := createResponse(doc)
 			json.NewEncoder(w).Encode(&response)
@@ -50,6 +48,19 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 	failureResponse := createFailureResponse("Something went wrong")
 	json.NewEncoder(w).Encode(&failureResponse)
 	return
+}
+
+func handleRegister(w http.ResponseWriter, r *http.Request) {
+	c := session.DB("freedom").C("user")
+	request := bson.M{}
+	check(json.NewDecoder(r.Body).Decode(&request))
+	writeSuccess := dao.Create(c, request)
+	w.Header().Set("Content-Type", "application/json")
+	if writeSuccess {
+		response := createResponse(request)
+		json.NewEncoder(w).Encode(&response)
+		return
+	}
 }
 
 func main() {
