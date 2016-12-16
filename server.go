@@ -72,6 +72,7 @@ func main() {
 
 	session.SetMode(mgo.Monotonic, true)
 
-	http.HandleFunc("/api/authenticate", (handleLogin))
+	http.HandleFunc("/api/authenticate", handleLogin)
+	http.HandleFunc("/api/register", handleRegister)
 	http.ListenAndServe(":5000", nil)
 }
