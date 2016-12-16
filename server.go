@@ -10,6 +10,7 @@ import (
 
 	"github.com/JosephNam/freedom-server/dao"
 	"github.com/JosephNam/freedom-server/models"
+	"github.com/julienschmidt/httprouter"
 )
 
 var session *mgo.Session
@@ -37,7 +38,7 @@ func bsonify(r *http.Request) bson.M {
 	return body
 }
 
-func handleLogin(w http.ResponseWriter, r *http.Request) {
+func handleLogin(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	w.Header().Set("Content-Type", "application/json")
 	c := session.DB("freedom").C("user")
 	request := bsonify(r)
@@ -55,11 +56,11 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func handleRegister(w http.ResponseWriter, r *http.Request) {
+func handleRegister(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	w.Header().Set("Content-Type", "application/json")
 	c := session.DB("freedom").C("user")
 	request := bsonify(r)
 	writeSuccess := dao.Create(c, request)
-	w.Header().Set("Content-Type", "application/json")
 	if writeSuccess {
 		createResponse(request, &w)
 		return
@@ -74,10 +75,11 @@ func main() {
 	check(connErr)
 
 	defer session.Close()
-
 	session.SetMode(mgo.Monotonic, true)
 
-	http.HandleFunc("/api/authenticate", handleLogin)
-	http.HandleFunc("/api/register", handleRegister)
-	http.ListenAndServe(":5000", nil)
+	router := httprouter.New()
+	router.POST("/api/authenticate", handleLogin)
+	router.POST("/api/register", handleRegister)
+
+	http.ListenAndServe(":5000", router)
 }
