@@ -20,47 +20,52 @@ func check(err error) {
 	}
 }
 
-func createResponse(data interface{}) bson.M {
-	return bson.M{"data": data, "success": true}
+func createResponse(data interface{}, w *http.ResponseWriter) {
+	response := bson.M{"data": data, "success": true}
+	json.NewEncoder(*w).Encode(&response)
+	return
 }
 
-func createFailureResponse(reason string) bson.M {
-	return bson.M{"reason": reason, "success": false}
+func createFailureResponse(reason string, w *http.ResponseWriter) {
+	response := bson.M{"reason": reason, "success": false}
+	json.NewEncoder(*w).Encode(&response)
+}
+
+func bsonify(r *http.Request) bson.M {
+	body := bson.M{}
+	check(json.NewDecoder(r.Body).Decode(&body))
+	return body
 }
 
 func handleLogin(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	c := session.DB("freedom").C("user")
-	request := bson.M{}
-	check(json.NewDecoder(r.Body).Decode(&request))
+	request := bsonify(r)
 	doc := models.User{}
 	readSuccess := dao.ReadOne(c, request, &doc)
-	w.Header().Set("Content-Type", "application/json")
 	if readSuccess {
 		if doc.Username == request["username"] && doc.Password == request["password"] {
-			response := createResponse(doc)
-			json.NewEncoder(w).Encode(&response)
+			createResponse(doc, &w)
 			return
 		}
-		failureResponse := createFailureResponse("Could not find a matching username and password combination")
-		json.NewEncoder(w).Encode(&failureResponse)
+		createFailureResponse("Could not find a matching username and password combination", &w)
 		return
 	}
-	failureResponse := createFailureResponse("Something went wrong")
-	json.NewEncoder(w).Encode(&failureResponse)
+	createFailureResponse("Something went wrong", &w)
 	return
 }
 
 func handleRegister(w http.ResponseWriter, r *http.Request) {
 	c := session.DB("freedom").C("user")
-	request := bson.M{}
-	check(json.NewDecoder(r.Body).Decode(&request))
+	request := bsonify(r)
 	writeSuccess := dao.Create(c, request)
 	w.Header().Set("Content-Type", "application/json")
 	if writeSuccess {
-		response := createResponse(request)
-		json.NewEncoder(w).Encode(&response)
+		createResponse(request, &w)
 		return
 	}
+	createFailureResponse("Something went wrong creating your user account", &w)
+	return
 }
 
 func main() {
