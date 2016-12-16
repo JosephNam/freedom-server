@@ -20,7 +20,9 @@ func Create(collection *mgo.Collection, object bson.M) bool {
 // ReadOne reads one item that matches the query and writes it to the target struct.
 // Returns a bool based on whether or not function executed correctly.
 func ReadOne(collection *mgo.Collection, query bson.M, target interface{}) bool {
-	err := collection.Find(query).One(&target)
+	fmt.Println("query is", query)
+	fmt.Println("target is", target)
+	err := collection.Find(query).One(target)
 	return check(err)
 }
 

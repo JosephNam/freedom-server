@@ -33,18 +33,23 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 	c := session.DB("freedom").C("user")
 	request := bson.M{}
 	check(json.NewDecoder(r.Body).Decode(&request))
-	result := models.User{}
-	success := dao.ReadOne(c, request, result)
+	doc := models.User{}
+	readSuccess := dao.ReadOne(c, request, &doc)
 	w.Header().Set("Content-Type", "application/json")
-	if success == true {
-		fmt.Println("User: ", result.Username)
-		res := createResponse(result)
-		json.NewEncoder(w).Encode(res)
+	if readSuccess {
+		fmt.Println("doc", doc)
+		if doc.Username == request["username"] && doc.Password == request["password"] {
+			response := createResponse(doc)
+			json.NewEncoder(w).Encode(&response)
+			return
+		}
+		failureResponse := createFailureResponse("Could not find a matching username and password combination")
+		json.NewEncoder(w).Encode(&failureResponse)
 		return
 	}
 	failureResponse := createFailureResponse("Something went wrong")
-	json.NewEncoder(w).Encode(failureResponse)
-
+	json.NewEncoder(w).Encode(&failureResponse)
+	return
 }
 
 func main() {
